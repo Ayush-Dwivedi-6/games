@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Lep's Treasure Vault - A 15-level interactive adventure Guess The Number game inspired by Lep's World with animated treasure chests, clues, power-ups, and achievements!">
+  <title>Lep's Treasure Vault | Guess The Number Quest</title>
+  
+  <!-- Google Fonts: Fredoka & Outfit for rich playful adventure typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Outfit:wght@400;600;800;900&family=Cinzel+Decorative:wght@700;900&display=swap" rel="stylesheet">
+  
+  <!-- Main Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Background Parallax Elements -->
+  <div class="sky-background">
+    <div class="rainbow-arc"></div>
+    <div class="sun-glow"></div>
+    <div class="cloud cloud-1"></div>
+    <div class="cloud cloud-2"></div>
+    <div class="cloud cloud-3"></div>
+    <div class="hills hill-back"></div>
+    <div class="hills hill-mid"></div>
+    <div class="hills hill-front"></div>
+  </div>
+
+  <!-- Particle Canvas for Coins, Clovers, Confetti -->
+  <canvas id="particleCanvas"></canvas>
+
+  <!-- Top App Navigation / HUD -->
+  <header class="game-header">
+    <div class="brand">
+      <span class="clover-icon">🍀</span>
+      <h1 class="game-title">Lep's Treasure Vault</h1>
+    </div>
+
+    <div class="hud-stats">
+      <div class="stat-badge gold-badge" id="goldBadge" title="Your Golden Coins">
+        <span class="coin-spin">🪙</span>
+        <span id="goldCounter">150</span>
+      </div>
+      <div class="stat-badge star-badge" id="starBadge" title="Total Stars Earned">
+        <span class="star-icon">⭐</span>
+        <span id="starCounter">0/45</span>
+      </div>
+      <button class="nav-btn trophy-btn" id="openTrophiesBtn" title="View Achievements">
+        <span>🏆</span>
+        <span class="btn-label">Trophies</span>
+        <span class="badge-dot" id="trophyNotificationDot"></span>
+      </button>
+      <button class="nav-btn shop-btn" id="openShopBtn" title="Magic Potion Shop">
+        <span>🧪</span>
+        <span class="btn-label">Shop</span>
+      </button>
+      <button class="nav-btn sound-btn" id="toggleSoundBtn" title="Toggle Sound">
+        <span id="soundIcon">🔊</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Container / Views -->
+  <main class="main-container">
+
+    <!-- VIEW 1: LEVEL SELECT MAP -->
+    <section class="view active-view" id="mapView">
+      <div class="map-header-card">
+        <div class="map-title-wrap">
+          <span class="map-banner-tag">WORLD EXPEDITION</span>
+          <h2>Select Your Treasure Expedition</h2>
+          <p>Journey through 5 magical worlds and 15 treasure vaults. Unlock every chest with your guessing prowess!</p>
+        </div>
+        <div class="map-quick-actions">
+          <button class="action-btn primary-btn" id="playNextLevelBtn">
+            <span>⚔️ Play Current Quest</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="world-tabs" id="worldTabs">
+        <!-- Rendered dynamically via JS -->
+      </div>
+
+      <div class="levels-grid" id="levelsGrid">
+        <!-- 15 Level Cards rendered via JS -->
+      </div>
+    </section>
+
+    <!-- VIEW 2: GAMEPLAY ARENA -->
+    <section class="view" id="gameView">
+      <!-- Arena Top Bar -->
+      <div class="arena-topbar">
+        <button class="back-btn" id="backToMapBtn">
+          <span>⬅️ Map</span>
+        </button>
+        <div class="level-info-badge">
+          <span id="currentWorldName">World 1: Clover Meadows</span> &bull; 
+          <strong id="currentLevelTitle">Level 1 - Wooden Chest</strong>
+        </div>
+        <div class="key-tracker" id="keyTracker">
+          <!-- Keys rendered via JS -->
+        </div>
+      </div>
+
+      <!-- Main Playfield Grid -->
+      <div class="arena-layout">
+        
+        <!-- Left: Lep Mascot & Hint/Lore Panel -->
+        <aside class="sidebar-panel left-panel">
+          <!-- Mascot Card -->
+          <div class="mascot-card">
+            <div class="mascot-avatar" id="mascotAvatar">
+              <div class="mascot-face" id="mascotFace">🧙‍♂️</div>
+              <div class="mascot-glow"></div>
+            </div>
+            <div class="mascot-speech-bubble" id="mascotSpeech">
+              "Top of the morning! Crack the lock between <strong id="speechRange">1 and 50</strong> to claim the shiny loot!"
+            </div>
+          </div>
+
+          <!-- Dynamic Clue & Lore Board -->
+          <div class="clue-board-card">
+            <div class="card-header-bar">
+              <span class="card-icon">📜</span>
+              <h3>Lep's Clue Scroll</h3>
+            </div>
+            <div class="clue-content" id="clueContent">
+              <div class="clue-item primary-clue" id="primaryClue">
+                <span class="clue-type-icon">🎯</span>
+                <div class="clue-text-wrap">
+                  <div class="clue-title">Target Scope</div>
+                  <div class="clue-desc" id="rangeClueDesc">Secret number is between 1 and 50</div>
+                </div>
+              </div>
+
+              <!-- Thermal Proximity Meter -->
+              <div class="thermal-meter-container" id="thermalMeterBox">
+                <div class="thermal-header">
+                  <span>Proximity Radar</span>
+                  <span id="thermalLabel" class="thermal-status-text">Standby</span>
+                </div>
+                <div class="thermal-track">
+                  <div class="thermal-fill" id="thermalFill"></div>
+                </div>
+                <div class="thermal-ticks">
+                  <span>🥶 Freezing</span>
+                  <span>❄️ Cold</span>
+                  <span>🌤️ Warm</span>
+                  <span>🔥 Hot</span>
+                  <span>💥 BOILING</span>
+                </div>
+              </div>
+
+              <!-- Special Math / Lore Hint -->
+              <div class="clue-item special-clue" id="specialClueItem" style="display: none;">
+                <span class="clue-type-icon">✨</span>
+                <div class="clue-text-wrap">
+                  <div class="clue-title" id="specialClueTitle">Fairy Whisper</div>
+                  <div class="clue-desc" id="specialClueDesc">...</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Active Range Eliminator Banner -->
+          <div class="range-bounds-card">
+            <div class="range-bound-box">
+              <span class="bound-label">Lowest Possible</span>
+              <span class="bound-val" id="minPossibleVal">1</span>
+            </div>
+            <div class="range-divider">➜ ? ➜</div>
+            <div class="range-bound-box">
+              <span class="bound-label">Highest Possible</span>
+              <span class="bound-val" id="maxPossibleVal">50</span>
+            </div>
+          </div>
+        </aside>
+
+        <!-- Center: Interactive Animated Treasure Chest & Guess Input -->
+        <div class="center-stage">
+          
+          <!-- Animated 3D Treasure Chest Container -->
+          <div class="treasure-stage" id="treasureStage">
+            <!-- Aura & Light Rays -->
+            <div class="chest-sunburst" id="chestSunburst"></div>
+            
+            <!-- 3D Chest Model Wrapper -->
+            <div class="chest-model" id="chestModel">
+              <!-- Chest Lid -->
+              <div class="chest-lid">
+                <div class="lid-wood"></div>
+                <div class="lid-band lid-band-left"></div>
+                <div class="lid-band lid-band-right"></div>
+                <div class="lid-handle"></div>
+                <div class="lock-top"></div>
+              </div>
+              
+              <!-- Chest Body -->
+              <div class="chest-base">
+                <div class="base-wood"></div>
+                <div class="base-band base-band-left"></div>
+                <div class="base-band base-band-right"></div>
+                
+                <!-- Front Lock Plate -->
+                <div class="lock-plate" id="lockPlate">
+                  <div class="keyhole"></div>
+                  <div class="lock-number-display" id="lockNumberDisplay">???</div>
+                </div>
+
+                <!-- Chest Interior Loot (Visible upon open) -->
+                <div class="chest-interior" id="chestInterior">
+                  <div class="gold-pile"></div>
+                  <div class="magic-gem gem-1">💎</div>
+                  <div class="magic-gem gem-2">⭐</div>
+                  <div class="magic-gem gem-3">👑</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Reaction Float Indicator -->
+            <div class="reaction-float" id="reactionFloat"></div>
+          </div>
+
+          <!-- Interactive Input / Controls Panel -->
+          <div class="controls-card">
+            <div class="input-row">
+              <button class="step-btn" id="stepDownBtn" title="Decrease number">-</button>
+              <div class="input-wrapper">
+                <label for="guessInput" class="visually-hidden">Your Number Guess</label>
+                <input type="number" id="guessInput" class="main-number-input" placeholder="0" min="1" max="50" autocomplete="off">
+              </div>
+              <button class="step-btn" id="stepUpBtn" title="Increase number">+</button>
+              <button class="submit-guess-btn" id="submitGuessBtn">
+                <span class="btn-icon">🗝️</span>
+                <span class="btn-text">UNLOCK!</span>
+              </button>
+            </div>
+
+            <!-- Slider Quick Dial -->
+            <div class="slider-row">
+              <span class="slider-val-tag" id="sliderMinTag">1</span>
+              <input type="range" id="guessSlider" class="range-slider" min="1" max="50" value="25">
+              <span class="slider-val-tag" id="sliderMaxTag">50</span>
+            </div>
+
+            <!-- Power-Up Action Bar -->
+            <div class="powerups-bar">
+              <div class="powerup-title">Adventurer Potions:</div>
+              <div class="powerup-buttons">
+                <button class="powerup-btn" id="cloverPowerBtn" title="Lucky Clover: Eliminates 30% of wrong numbers">
+                  <span class="power-icon">🍀</span>
+                  <span class="power-name">Clover Scope</span>
+                  <span class="power-qty" id="cloverQty">x2</span>
+                </button>
+                <button class="powerup-btn" id="orbPowerBtn" title="Mystic Orb: Reveals Even/Odd or Divisibility">
+                  <span class="power-icon">🔮</span>
+                  <span class="power-name">Mystic Orb</span>
+                  <span class="power-qty" id="orbQty">x2</span>
+                </button>
+                <button class="powerup-btn" id="keyPowerBtn" title="Golden Skeleton Key: Gives +1 Extra Key">
+                  <span class="power-icon">🗝️</span>
+                  <span class="power-name">Extra Key</span>
+                  <span class="power-qty" id="keyQty">x1</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Guess History & Clue Log -->
+        <aside class="sidebar-panel right-panel">
+          <div class="history-card">
+            <div class="card-header-bar">
+              <span class="card-icon">📜</span>
+              <h3>Attempt Log</h3>
+              <span class="history-count" id="attemptCountBadge">0 Tries</span>
+            </div>
+            
+            <div class="history-list-wrapper">
+              <ul class="history-list" id="historyList">
+                <li class="history-empty">
+                  <span>No attempts yet. Take a guess to unlock the vault!</span>
+                </li>
+              </ul>
+            </div>
+
+            <div class="quick-numpad-toggle">
+              <button class="toggle-numpad-btn" id="toggleNumpadBtn">
+                <span>📱 Toggle On-Screen Keypad</span>
+              </button>
+            </div>
+
+            <!-- Virtual Number Keypad for Tablets/Phones/Quick Clicks -->
+            <div class="virtual-numpad" id="virtualNumpad" style="display: none;">
+              <div class="numpad-grid">
+                <button class="num-key" data-val="1">1</button>
+                <button class="num-key" data-val="2">2</button>
+                <button class="num-key" data-val="3">3</button>
+                <button class="num-key" data-val="4">4</button>
+                <button class="num-key" data-val="5">5</button>
+                <button class="num-key" data-val="6">6</button>
+                <button class="num-key" data-val="7">7</button>
+                <button class="num-key" data-val="8">8</button>
+                <button class="num-key" data-val="9">9</button>
+                <button class="num-key action-key" data-action="clear">C</button>
+                <button class="num-key" data-val="0">0</button>
+                <button class="num-key action-key" data-action="backspace">⌫</button>
+              </div>
+            </div>
+          </div>
+        </aside>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL 1: VICTORY & LOOT CHEST CELEBRATION -->
+  <div class="modal-overlay" id="victoryModal">
+    <div class="modal-card victory-card">
+      <div class="modal-ribbon">CHEST UNLOCKED!</div>
+      <div class="victory-header">
+        <div class="victory-stars" id="victoryStars">
+          <span class="star-anim star-1">⭐</span>
+          <span class="star-anim star-2">⭐</span>
+          <span class="star-anim star-3">⭐</span>
+        </div>
+        <h2 id="victoryTitle">Splendid Discovery!</h2>
+        <p id="victorySubtitle">You unlocked the vault with the secret code: <strong id="victoryCodeNumber" class="highlight-number">42</strong></p>
+      </div>
+
+      <div class="loot-rewards-grid">
+        <div class="reward-box">
+          <span class="reward-icon">🪙</span>
+          <span class="reward-val" id="rewardCoins">+100 Gold</span>
+        </div>
+        <div class="reward-box">
+          <span class="reward-icon">🎯</span>
+          <span class="reward-val" id="rewardGuesses">3 Guesses</span>
+        </div>
+        <div class="reward-box">
+          <span class="reward-icon">⚡</span>
+          <span class="reward-val" id="rewardBonus">+50 Streak Bonus</span>
+        </div>
+      </div>
+
+      <div class="achievement-unlocked-banner" id="victoryAchievementBanner" style="display: none;">
+        <span class="achieve-banner-icon">🏆</span>
+        <div class="achieve-banner-text">
+          <div class="achieve-title" id="victoryAchieveTitle">New Trophy Unlocked!</div>
+          <div class="achieve-desc" id="victoryAchieveDesc">...</div>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="action-btn secondary-btn" id="victoryMapBtn">
+          <span>🗺️ Map</span>
+        </button>
+        <button class="action-btn primary-btn" id="victoryNextBtn">
+          <span>➡️ Next Level</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 2: GAME OVER / OUT OF KEYS -->
+  <div class="modal-overlay" id="gameOverModal">
+    <div class="modal-card gameover-card">
+      <div class="modal-ribbon defeat-ribbon">CHEST SEALED!</div>
+      <div class="defeat-icon">🔒</div>
+      <h2>Out of Golden Keys!</h2>
+      <p>The lock enchanted itself shut. The secret number was <strong id="defeatSecretNumber" class="highlight-number">77</strong>.</p>
+      <p class="defeat-tip">💡 Tip: Use your *Thermal Radar* and *Adventurer Potions* to narrow down the range quicker!</p>
+      
+      <div class="modal-actions">
+        <button class="action-btn secondary-btn" id="defeatMapBtn">
+          <span>🗺️ World Map</span>
+        </button>
+        <button class="action-btn primary-btn" id="defeatRetryBtn">
+          <span>🔄 Try Again</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 3: TROPHY & ACHIEVEMENTS ROOM -->
+  <div class="modal-overlay" id="trophyModal">
+    <div class="modal-card trophy-vault-card">
+      <div class="modal-close-btn" id="closeTrophyModalBtn">✖</div>
+      <div class="trophy-header">
+        <span class="trophy-big-icon">🏆</span>
+        <h2>Lep's Hall of Trophies</h2>
+        <p>Unlock all 12 mystical achievements by mastering your number-guessing powers!</p>
+      </div>
+
+      <div class="trophy-progress-wrap">
+        <div class="trophy-progress-bar">
+          <div class="trophy-fill" id="trophyFillBar" style="width: 0%;"></div>
+        </div>
+        <span class="trophy-count-tag" id="trophyCountTag">0 / 12 Unlocked</span>
+      </div>
+
+      <div class="trophies-grid" id="trophiesGrid">
+        <!-- Trophies rendered dynamically via JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 4: MAGIC POTION SHOP -->
+  <div class="modal-overlay" id="shopModal">
+    <div class="modal-card shop-card">
+      <div class="modal-close-btn" id="closeShopModalBtn">✖</div>
+      <div class="shop-header">
+        <span class="shop-big-icon">🧙‍♂️</span>
+        <h2>Lep's Alchemist Shop</h2>
+        <p>Spend your hard-earned gold coins to stock up on powerful potions!</p>
+        <div class="shop-wallet">
+          <span>Current Purse: </span>
+          <span class="coin-spin">🪙</span>
+          <strong id="shopGoldDisplay">150</strong>
+        </div>
+      </div>
+
+      <div class="shop-items-grid">
+        <!-- Shop Item 1 -->
+        <div class="shop-item">
+          <div class="shop-item-icon">🍀</div>
+          <div class="shop-item-info">
+            <h4>Lucky Clover Scope</h4>
+            <p>Reveals and cuts away 30% of incorrect numbers from your range.</p>
+            <div class="shop-price">🪙 60 Gold</div>
+          </div>
+          <button class="buy-btn" data-item="clover" data-cost="60">Buy (60🪙)</button>
+        </div>
+
+        <!-- Shop Item 2 -->
+        <div class="shop-item">
+          <div class="shop-item-icon">🔮</div>
+          <div class="shop-item-info">
+            <h4>Mystic Divination Orb</h4>
+            <p>Reveals mathematical properties (Even/Odd, Multiples, Last Digit).</p>
+            <div class="shop-price">🪙 80 Gold</div>
+          </div>
+          <button class="buy-btn" data-item="orb" data-cost="80">Buy (80🪙)</button>
+        </div>
+
+        <!-- Shop Item 3 -->
+        <div class="shop-item">
+          <div class="shop-item-icon">🗝️</div>
+          <div class="shop-item-info">
+            <h4>Skeleton Key</h4>
+            <p>Grants +1 additional golden key attempt when you're in a pinch.</p>
+            <div class="shop-price">🪙 100 Gold</div>
+          </div>
+          <button class="buy-btn" data-item="key" data-cost="100">Buy (100🪙)</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Overlay for Instant Achievement / Event Alerts -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Main Game Script -->
+  <script src="game.js"></script>
+</body>
+</html>
